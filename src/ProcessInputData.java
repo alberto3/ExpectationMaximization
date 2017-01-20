@@ -37,15 +37,17 @@ public class ProcessInputData {
         switch (++lineCounter) {
             case 1:
                 lastArticle = new Article();
-                List<String> title = Arrays.asList(line.replace("<", "").replace(">", "").split("\\S"));
-                title.remove(0);
-                lastArticle.setId(title.remove(1));
-                lastArticle.setTopics(title);
+                List<String> title = Arrays.asList(line.replace("<", "").replace(">", "").split("\\s"));
+                lastArticle.setId(title.get(1));
+                lastArticle.setTopics(title.subList(2, title.size()));
                 break;
             case 3:
                 lastArticle.setText(line);
                 articles.add(lastArticle);
+                break;
+            case 4:
                 lineCounter = 0;
+                break;
         }
     }
 }
