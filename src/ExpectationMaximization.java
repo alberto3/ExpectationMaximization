@@ -23,17 +23,13 @@ public class ExpectationMaximization {
         final int[] index = {0};
         clusters = new HashMap<>();
 
-        developmentSet.getArticles().forEach(new Consumer<Article>() {
+        developmentSet.getArticles().forEach(article -> {
+            int key = index[0]++ % maxClusters;
 
-            @Override
-            public void accept(Article article) {
-                int key = index[0]++ % maxClusters;
-
-                if (!clusters.containsKey(key)) {
-                    clusters.put(key, new ArrayList<>());
-                }
-                clusters.get(key).add(article);
+            if (!clusters.containsKey(key)) {
+                clusters.put(key, new ArrayList<>());
             }
+            clusters.get(key).add(article);
         });
     }
 }
