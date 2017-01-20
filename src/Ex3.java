@@ -7,6 +7,9 @@ public class Ex3 {
         // Prepare the development set
         DevelopmentSet developmentSet = processFileData.readInputFile();
 
-
+        ExpectationMaximization expectationMaximization = new ExpectationMaximization();
+      
+        // Init the EM algorithm
+        expectationMaximization.init(DS);
     }
 }
