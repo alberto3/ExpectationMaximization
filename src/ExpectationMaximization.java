@@ -20,14 +20,14 @@ public class ExpectationMaximization {
     }
 
     private void initClusters() {
+        final int[] index = {0};
         clusters = new HashMap<>();
 
         developmentSet.getArticles().forEach(new Consumer<Article>() {
-            private int index = 0;
 
             @Override
             public void accept(Article article) {
-                int key = index % maxClusters;
+                int key = index[0]++ % maxClusters;
 
                 if (!clusters.containsKey(key)) {
                     clusters.put(key, new ArrayList<>());
