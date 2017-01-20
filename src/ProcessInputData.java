@@ -3,7 +3,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class ProcessInputData {
@@ -12,6 +14,7 @@ public class ProcessInputData {
     private List<Article> articles;
     private Article lastArticle;
     private int lineCounter;
+    public Map<String, Integer> wordsOccurrences = new HashMap<String, Integer>();
 
     public ProcessInputData(String inputFileName) {
         this.inputFileName = inputFileName;
@@ -42,12 +45,15 @@ public class ProcessInputData {
                 lastArticle.setTopics(title.subList(2, title.size()));
                 break;
             case 3:
-                lastArticle.setText(line);
+                lastArticle.setWordsOccurrences(Arrays.asList(line.split("\\s")));
+                
                 articles.add(lastArticle);
+                
                 break;
             case 4:
                 lineCounter = 0;
                 break;
         }
     }
+    
 }
