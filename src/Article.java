@@ -3,11 +3,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Article {
+public class Article implements Comparable<Article> {
     private List<String> topics;
     private Map<String, Integer> wordsOccurrences = new HashMap<String, Integer>();
-    ;
-    private String id;
+
+    private int id;
 
     public List<String> getTopics() {
         return topics;
@@ -17,11 +17,11 @@ public class Article {
         this.topics = topics;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -51,5 +51,18 @@ public class Article {
         for (String word : rareWords) {
             this.wordsOccurrences.remove(word);
         }
+    }
+
+    public long getNumberOfWords() {
+        long numberOfWords = 0;
+        for (String word : this.wordsOccurrences.keySet()) {
+            numberOfWords += this.wordsOccurrences.get(word);
+        }
+        return numberOfWords;
+    }
+
+    @Override
+    public int compareTo(Article oArticle) {
+        return id - oArticle.id;
     }
 }

@@ -17,6 +17,6 @@ public class Ex3 {
         // Init the EM algorithm
         expectationMaximization.init(developmentSet, NUM_OF_CLUSTERS);
 
-        expectationMaximization.run(developmentSet);
+        expectationMaximization.run();
     }
 }

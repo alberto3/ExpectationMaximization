@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class ProcessInputData {
-
     private String inputFileName = "";
     private List<Article> articles;
     private Article lastArticle;
@@ -37,7 +36,7 @@ public class ProcessInputData {
             case 1:
                 lastArticle = new Article();
                 List<String> title = Arrays.asList(line.replace("<", "").replace(">", "").split("\\s"));
-                lastArticle.setId(title.get(1));
+                lastArticle.setId(Integer.parseInt(title.get(1)));
                 lastArticle.setTopics(title.subList(2, title.size()));
                 break;
             case 3:
@@ -49,5 +48,4 @@ public class ProcessInputData {
                 break;
         }
     }
-
 }
