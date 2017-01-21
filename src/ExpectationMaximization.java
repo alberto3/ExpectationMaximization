@@ -5,6 +5,7 @@ public class ExpectationMaximization {
     private Map<Integer, List<Article>> clusters;
     private DevelopmentSet developmentSet;
     private int numClusters;
+    // todo: what is the idea of initializing with TreeMap and then override with HaspMap (line #25)?
     private Map<Article, Double[]> Wti = new TreeMap<>();
     private Map<Article, Double[]> Zti = new TreeMap<>();
     private Map<Article, Double> Mt = new TreeMap<>();
@@ -25,35 +26,9 @@ public class ExpectationMaximization {
 
         initClusters();
         initEM();
+        // todo: Running M Step before E Step?
         MStep();
 
-    }
-
-    private void initClusters() {
-        final int[] index = {0};
-        clusters = new HashMap<>();
-
-        developmentSet.getArticles().forEach(article -> {
-            int key = index[0]++ % numClusters;
-
-            if (!clusters.containsKey(key)) {
-                clusters.put(key, new ArrayList<>());
-            }
-            clusters.get(key).add(article);
-        });
-    }
-
-    // Set the initial Wti
-    private void initEM() {
-        for (int i = 0; i < numClusters; i++) {
-            for (Article currentArticle : clusters.get(i)) {
-                Double[] clusterProbabilityForArticle = new Double[numClusters];
-                for (int j = 0; j < numClusters; j++) {
-                    clusterProbabilityForArticle[j] = (i == j ? 1.0 : 0.0);
-                }
-                Wti.put(currentArticle, clusterProbabilityForArticle);
-            }
-        }
     }
 
     public void run() {
@@ -72,10 +47,39 @@ public class ExpectationMaximization {
         }
     }
 
+    private void initClusters() {
+        final int[] index = {0};
+        clusters = new HashMap<>();
+
+        developmentSet.getArticles().forEach(article -> {
+            int key = index[0]++ % numClusters;
+
+            if (!clusters.containsKey(key)) {
+                clusters.put(key, new ArrayList<>());
+            }
+            clusters.get(key).add(article);
+        });
+    }
+
+    // Set the initial Wti
+    private void initEM() {
+        // todo: WAT?!
+        for (int i = 0; i < numClusters; i++) {
+            for (Article currentArticle : clusters.get(i)) {
+                Double[] clusterProbabilityForArticle = new Double[numClusters];
+                for (int j = 0; j < numClusters; j++) {
+                    // todo: why is the diagonal is 1?
+                    clusterProbabilityForArticle[j] = (i == j ? 1.0 : 0.0);
+                }
+                Wti.put(currentArticle, clusterProbabilityForArticle);
+            }
+        }
+    }
+
     private double calcLikelihood() {
         double likelihood = 0;
         double sumZt;
-        double m = 0;
+        double m;
 
         for (Article currentArticle : Mt.keySet()) {
             sumZt = 0;
@@ -114,6 +118,7 @@ public class ExpectationMaximization {
                     sumZi = Math.exp(Zi[i] - m);
                 }
             }
+            
             for (int i = 0; i < numClusters; i++) {
                 clusterProbabilityForArticle[i] /= sumZi;
             }
@@ -123,6 +128,7 @@ public class ExpectationMaximization {
 
     }
 
+    // todo: WordsOccurrences is never used
     private Double[] calcZi(Map<String, Integer> WordsOccurrences, Article currentArticle) {
         Double[] Zt = new Double[numClusters];
 

@@ -40,7 +40,7 @@ public class ProcessInputData {
                 lastArticle.setTopics(title.subList(2, title.size()));
                 break;
             case 3:
-                lastArticle.setWordsOccurrences(Arrays.asList(line.split("\\s")));
+                lastArticle.addWords(Arrays.asList(line.split("\\s")));
                 articles.add(lastArticle);
                 break;
             case 4:
