@@ -2,33 +2,32 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class ExpectationMaximization {
-    private Map<Integer, List<Article>> clusters;
-    private DevelopmentSet developmentSet;
-    private int numClusters;
-    // todo: what is the idea of initializing with TreeMap and then override with HaspMap (line #25)?
-    private Map<Article, Double[]> Wti = new TreeMap<>();
-    private Map<Article, Double[]> Zti = new TreeMap<>();
-    private Map<Article, Double> Mt = new TreeMap<>();
-    private Map<String, Double[]> Pik = new TreeMap<>();
-
     private final static double TESTED_LAMBDA = 0.01; // check
     private final static double EPSILON_THRESHOLD = 0.00000001;
     private final static double K = 10;
     private final static double EM_THRESHOLD = 1; // check
 
-    double clustersProbability[]; //alpha(i)
+    private Map<Integer, List<Article>> clusters;
+    private DevelopmentSet developmentSet;
+    private int numClusters;
+    private Map<Article, Double[]> Wti;
+    private Map<Article, Double[]> Zti;
+    private Map<Article, Double> Mt;
+    private Map<String, Double[]> Pik;
+    private double clustersProbability[]; //alpha(i)
 
     public void init(DevelopmentSet developmentSet, int numClusters) {
+        this.Wti = new HashMap<>();
+        this.Zti = new HashMap<>();
+        this.Mt = new HashMap<>();
+        this.Pik = new HashMap<>();
         this.developmentSet = developmentSet;
         this.numClusters = numClusters;
-        clustersProbability = new double[numClusters];
-        Wti = new HashMap<>();
+        this.clustersProbability = new double[numClusters];
 
         initClusters();
         initEM();
-        // todo: Running M Step before E Step?
         MStep();
-
     }
 
     public void run() {
@@ -63,16 +62,142 @@ public class ExpectationMaximization {
 
     // Set the initial Wti
     private void initEM() {
-        // todo: WAT?!
         for (int i = 0; i < numClusters; i++) {
             for (Article currentArticle : clusters.get(i)) {
                 Double[] clusterProbabilityForArticle = new Double[numClusters];
                 for (int j = 0; j < numClusters; j++) {
-                    // todo: why is the diagonal is 1?
                     clusterProbabilityForArticle[j] = (i == j ? 1.0 : 0.0);
                 }
                 Wti.put(currentArticle, clusterProbabilityForArticle);
             }
+        }
+    }
+
+    private void EStep() {
+        for (Article currentArticle : developmentSet.getArticles()) {
+            calcWti(currentArticle);
+        }
+    }
+
+    // Calculate article probabilities for each cluster
+    // Approximate Wti (4)
+    private void calcWti(Article currentArticle) {
+        Double sumZi = 0.0;
+        Double[] Zi = calcZi(currentArticle);
+        Double[] clusterProbabilityForArticle = new Double[numClusters];
+        Double m = calcMaxZi(Stream.of(Zi).mapToDouble(Double::doubleValue).toArray());
+
+        for (int i = 0; i < numClusters; i++) {
+            if (Zi[i] - m < -1 * K) {
+                clusterProbabilityForArticle[i] = 0.0;
+            } else {
+                double eZiMinusM = Math.exp(Zi[i] - m);
+
+                clusterProbabilityForArticle[i] = eZiMinusM;
+                sumZi += eZiMinusM;
+            }
+        }
+
+        for (int i = 0; i < numClusters; i++) {
+            clusterProbabilityForArticle[i] /= sumZi;
+        }
+
+        Wti.put(currentArticle, clusterProbabilityForArticle);
+        Zti.put(currentArticle, Zi);
+        Mt.put(currentArticle, m);
+    }
+
+    // Calculate the Z value for each article in each cluster
+    private Double[] calcZi(Article article) {
+        Double[] result = new Double[numClusters];
+
+        for (int i = 0; i < numClusters; i++) {
+            double sumFrequency = 0;
+
+            // Going over k words and calculate the Z value for each article in each cluster
+            for (String word : article.getWordsOccurrences().keySet()) {
+                sumFrequency += article.getWordOccurrences(word) * Math.log(Pik.get(word)[i]);
+            }
+
+            result[i] = Math.log(clustersProbability[i]) + sumFrequency;
+        }
+
+        return result;
+    }
+
+    private Double calcMaxZi(double[] Zi) {
+        return Arrays.stream(Zi).max().getAsDouble();
+    }
+
+    private void MStep() {
+        calcPik();
+        calcAlpha();
+        smoothAlpha();
+    }
+
+    private void calcPik() {
+        double sumWti;
+        double wordsOccurrencesInArticles;
+        Double[] lidstoneP = new Double[numClusters];
+        double[] wordsInClusters = new double[numClusters];
+
+        // Calculate Pik (dividend)
+        for (int i = 0; i < numClusters; i++) {
+            sumWti = 0;
+            for (Article currentArticle : developmentSet.getArticles()) {
+                sumWti += this.Wti.get(currentArticle)[i] * currentArticle.getNumberOfWords();
+            }
+            wordsInClusters[i] = sumWti;
+        }
+
+        // Calculate Pik (divisor)
+        // Calculate the Lidstone probability for each word to be in each topic by its Occurrences in all articles
+        for (String word : developmentSet.getWordsOccurrences().keySet()) {
+            for (int i = 0; i < numClusters; i++) {
+                wordsOccurrencesInArticles = 0;
+                for (Article currentArticle : developmentSet.getArticles()) {
+                    if (currentArticle.getWordOccurrences(word) > 0 && this.Wti.get(currentArticle)[i] > 0) {
+                        wordsOccurrencesInArticles += this.Wti.get(currentArticle)[i] * currentArticle.getWordOccurrences(word);
+                    }
+                }
+                lidstoneP[i] = calcLidstonePortability(wordsOccurrencesInArticles, wordsInClusters[i]);
+            }
+            this.Pik.put(word, lidstoneP);
+        }
+    }
+
+    private double calcLidstonePortability(double wordsOccurrencesInArticles, double wordsInCluster) {
+        return (wordsOccurrencesInArticles + TESTED_LAMBDA) / (wordsInCluster + TESTED_LAMBDA * this.developmentSet.getWordsOccurrences().size());
+    }
+
+    // Calculate alpha(i)
+    private void calcAlpha() {
+        double currentClusterProbability;
+        for (int i = 0; i < numClusters; i++) {
+            currentClusterProbability = 0;
+            for (Article currentArticle : developmentSet.getArticles()) {
+                currentClusterProbability += this.Wti.get(currentArticle)[i];
+            }
+            this.clustersProbability[i] = currentClusterProbability / developmentSet.getArticles().size();
+        }
+    }
+
+    private void smoothAlpha() {
+        double sumAlpha = 0;
+
+        // Fix alpha(i) to the epsilon threshold
+        for (int i = 0; i < numClusters; i++) {
+            this.clustersProbability[i] = (clustersProbability[i] > EPSILON_THRESHOLD ? clustersProbability[i] : EPSILON_THRESHOLD);
+        }
+
+        // Find total clusters probability
+        for (int i = 0; i < numClusters; i++) {
+            sumAlpha += this.clustersProbability[i];
+        }
+
+        // Find the probability to be in each cluster
+        for (int i = 0; i < numClusters; i++) {
+            this.clustersProbability[i] /= sumAlpha;
         }
     }
 
@@ -94,116 +219,5 @@ public class ExpectationMaximization {
             likelihood += m + Math.log(sumZt);
         }
         return likelihood;
-    }
-
-    private void EStep() {
-        double sumZi;
-        Double[] clusterProbabilityForArticle = new Double[numClusters];
-
-        for (Article currentArticle : developmentSet.getArticles()) {
-            Double[] Zi = calcZi(developmentSet.getWordsOccurrences(), currentArticle);
-            double m = calcMaxZi(Stream.of(Zi).mapToDouble(Double::doubleValue).toArray());
-            Zti.put(currentArticle, Zi);
-            Mt.put(currentArticle, m);
-
-            // Calculate article probabilities for each cluster
-            // Approximate Wti (4)
-
-            sumZi = 0;
-            for (int i = 0; i < numClusters; i++) {
-                if (Zi[i] - m < -1 * K) {
-                    clusterProbabilityForArticle[i] = 0.0;
-                } else {
-                    clusterProbabilityForArticle[i] = Math.exp(Zi[i] - m);
-                    sumZi = Math.exp(Zi[i] - m);
-                }
-            }
-            
-            for (int i = 0; i < numClusters; i++) {
-                clusterProbabilityForArticle[i] /= sumZi;
-            }
-
-            Wti.put(currentArticle, clusterProbabilityForArticle);
-        }
-
-    }
-
-    // todo: WordsOccurrences is never used
-    private Double[] calcZi(Map<String, Integer> WordsOccurrences, Article currentArticle) {
-        Double[] Zt = new Double[numClusters];
-
-        for (int i = 0; i < numClusters; i++) {
-            double sumFrequency = 0;
-
-            // Going over k words and calculate the Z value for each article in each cluster
-            for (String word : currentArticle.getWordsOccurrences().keySet()) {
-                sumFrequency += currentArticle.getWordOccurrences(word) * Math.log(Pik.get(word)[i]);
-            }
-            Zt[i] = Math.log(clustersProbability[i]) + sumFrequency;
-        }
-        return Zt;
-    }
-
-    private Double calcMaxZi(double[] Zi) {
-        return Arrays.stream(Zi).max().getAsDouble();
-    }
-
-    private void MStep() {
-        double[] wordsInClusters = new double[numClusters];
-        Double[] lidstoneP = new Double[numClusters];
-        double sumWti;
-        double currentClusterProbability;
-        double wordsOccurrencesInArticles;
-        double sumAlpha = 0;
-
-        for (int i = 0; i < numClusters; i++) {
-            sumWti = 0;
-            for (Article currentArticle : developmentSet.getArticles()) {
-                sumWti += this.Wti.get(currentArticle)[i] * currentArticle.getNumberOfWords();
-            }
-            wordsInClusters[i] = sumWti;
-        }
-
-        // Calculate the lidstone probability for each word to be in each topic by its Occurrences in all articles
-        for (String word : developmentSet.getWordsOccurrences().keySet()) {
-            for (int i = 0; i < numClusters; i++) {
-                wordsOccurrencesInArticles = 0;
-                for (Article currentArticle : developmentSet.getArticles()) {
-                    if (currentArticle.getWordOccurrences(word) > 0 && this.Wti.get(currentArticle)[i] > 0) {
-                        wordsOccurrencesInArticles += this.Wti.get(currentArticle)[i] * currentArticle.getWordOccurrences(word);
-                    }
-                }
-                lidstoneP[i] = calcLidstonePortability(wordsOccurrencesInArticles, wordsInClusters[i]);
-            }
-            this.Pik.put(word, lidstoneP);
-        }
-
-        // Calculate alpha(i)
-        for (int i = 0; i < numClusters; i++) {
-            currentClusterProbability = 0;
-            for (Article currentArticle : developmentSet.getArticles()) {
-                currentClusterProbability += this.Wti.get(currentArticle)[i];
-            }
-            this.clustersProbability[i] = currentClusterProbability / developmentSet.getArticles().size();
-        }
-
-        // Fix alpha(i) to the epsilon threshold
-        for (int i = 0; i < numClusters; i++) {
-            clustersProbability[i] = (clustersProbability[i] > EPSILON_THRESHOLD ? clustersProbability[i] : EPSILON_THRESHOLD);
-        }
-
-        // Find total clusters probability
-        for (int i = 0; i < numClusters; i++) {
-            sumAlpha += clustersProbability[i];
-        }
-
-        // Find the probability to be in each cluster
-        for (int i = 0; i < numClusters; i++) {
-            clustersProbability[i] /= sumAlpha;
-        }
-    }
-
-    private double calcLidstonePortability(double wordsOccurrencesInArticles, double wordsInCluster) {
-        return (wordsOccurrencesInArticles + TESTED_LAMBDA) / (wordsInCluster + TESTED_LAMBDA * this.developmentSet.getWordsOccurrences().size());
     }
 }
