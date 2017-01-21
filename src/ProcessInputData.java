@@ -1,11 +1,7 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class ProcessInputData {
@@ -41,19 +37,17 @@ public class ProcessInputData {
             case 1:
                 lastArticle = new Article();
                 List<String> title = Arrays.asList(line.replace("<", "").replace(">", "").split("\\s"));
-                lastArticle.setId(title.get(1));
+                lastArticle.setId(Integer.parseInt(title.get(1)));
                 lastArticle.setTopics(title.subList(2, title.size()));
                 break;
             case 3:
                 lastArticle.setWordsOccurrences(Arrays.asList(line.split("\\s")));
-                
                 articles.add(lastArticle);
-                
                 break;
             case 4:
                 lineCounter = 0;
                 break;
         }
     }
-    
+
 }
