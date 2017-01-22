@@ -3,10 +3,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Article implements Comparable<Article>{
-    private List<String> topics;
+public class Article implements Comparable<Article> {
+    private String assignedTopic;
+	private List<String> topics;
     private Map<String, Integer> wordsOccurrences = new HashMap<String, Integer>();
-    
     private int id;
 
     public List<String> getTopics() {
@@ -31,12 +31,20 @@ public class Article implements Comparable<Article>{
         }
         topics.add(topic);
     }
+    
+    public String getAssignedTopic() {
+        return assignedTopic;
+    }
+    
+    public void setAssignedTopic(String topic) {
+    	this.assignedTopic = topic;
+    }
 
     public Map<String, Integer> getWordsOccurrences() {
         return wordsOccurrences;
     }
 
-    public void setWordsOccurrences(List<String> words) {
+    public void addWords(List<String> words) {
         for (String word : words) {
             this.wordsOccurrences.put(word, getWordOccurrences(word) + 1);
         }
@@ -52,17 +60,17 @@ public class Article implements Comparable<Article>{
             this.wordsOccurrences.remove(word);
         }
     }
-    
+
     public long getNumberOfWords() {
-    	long numberOfWords = 0;
-    	for (String word : this.wordsOccurrences.keySet()) {
-    		numberOfWords += this.wordsOccurrences.get(word);
-    	}
-    	return numberOfWords;
+        long numberOfWords = 0;
+        for (String word : this.wordsOccurrences.keySet()) {
+            numberOfWords += this.wordsOccurrences.get(word);
+        }
+        return numberOfWords;
     }
 
-	@Override
-	public int compareTo(Article oArticle) {
-		return id-oArticle.id;
-	}
+    @Override
+    public int compareTo(Article oArticle) {
+        return id - oArticle.id;
+    }
 }

@@ -19,14 +19,25 @@ public class DevelopmentSet {
         return wordsOccurrences;
     }
 
-    public void countWordsOccurrences() {
+    public void calcWordsOccurrences() {
         for (Article currentArticle : articles) {
             for (Map.Entry<String, Integer> articleWordOccurrences : currentArticle.getWordsOccurrences().entrySet()) {
                 updateWordOccurrences(articleWordOccurrences);
             }
         }
     }
+    
+	public long countNumberOfWords()
+	{
+		long numberOfWords = 0;
 
+		for (Integer wordCount : wordsOccurrences.values())	{
+			numberOfWords += wordCount;
+		}
+		
+		return numberOfWords;
+	}
+    
     public void filterRareWords(int minWordOccurrence) {
         Map<String, Integer> filteredWordsOccurrences = new HashMap<String, Integer>();
         List<String> rareWords = new ArrayList<String>();
