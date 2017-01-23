@@ -27,7 +27,7 @@ public class ExpectationMaximization {
 
         initClusters();
         initEM();
-        MStep();
+        stepM();
     }
 
     public void run() {
@@ -39,8 +39,8 @@ public class ExpectationMaximization {
 
         // Run EM algorithm until convergence
         while (likelihood - lastLikelihood > EM_THRESHOLD) {
-            EStep();
-            MStep();
+            stepE();
+            stepM();
             lastLikelihood = likelihood;
             likelihood = calcLikelihood();
         }
@@ -73,7 +73,7 @@ public class ExpectationMaximization {
         }
     }
 
-    private void EStep() {
+    private void stepE() {
         for (Article currentArticle : developmentSet.getArticles()) {
             calcWti(currentArticle);
         }
@@ -129,7 +129,7 @@ public class ExpectationMaximization {
         return Arrays.stream(Zi).max().getAsDouble();
     }
 
-    private void MStep() {
+    private void stepM() {
         calcPik();
         calcAlpha();
         smoothAlpha();
@@ -145,6 +145,7 @@ public class ExpectationMaximization {
         for (int i = 0; i < numClusters; i++) {
             sumWti = 0;
             for (Article currentArticle : developmentSet.getArticles()) {
+                // Todo: Why not working directly on the numerically stable numerator Zi? we can calculate the first Zi in the initEM.
                 sumWti += this.Wti.get(currentArticle)[i] * currentArticle.getNumberOfWords();
             }
             wordsInClusters[i] = sumWti;
