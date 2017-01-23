@@ -9,6 +9,7 @@ public class ExpectationMaximization {
 
     private Map<Integer, List<Article>> clusters;
     private DevelopmentSet developmentSet;
+    private Topics topics;
     private int numClusters;
     private Map<Article, Double[]> Wti;
     private Map<Article, Double[]> Zti;
@@ -16,34 +17,84 @@ public class ExpectationMaximization {
     private Map<String, Double[]> Pik;
     private double clustersProbability[]; //alpha(i)
 
-    public void init(DevelopmentSet developmentSet, int numClusters) {
+    public void init(DevelopmentSet developmentSet, int numClusters, Topics topics) {
         this.Wti = new HashMap<>();
         this.Zti = new HashMap<>();
         this.Mt = new HashMap<>();
         this.Pik = new HashMap<>();
         this.developmentSet = developmentSet;
+        this.topics = topics;
         this.numClusters = numClusters;
         this.clustersProbability = new double[numClusters];
 
         initClusters();
         initEM();
-        stepM();
+        MStep();
     }
 
     public void run() {
         double likelihood = 0;
+        List<Double> likelihoods = new ArrayList<Double>();
+        double perplexity = 0;
+        List<Double> perplexities = new ArrayList<Double>();
         double lastLikelihood = likelihood - EM_THRESHOLD - 1;
         // if in some round
         // we find that the Likelihood decrease - it means that we have a bug in our implementation or
         // that we are smoothing too aggressively.
 
+        Integer[][] confusionMatrix = bulidConfusionMatrix();
+
         // Run EM algorithm until convergence
         while (likelihood - lastLikelihood > EM_THRESHOLD) {
-            stepE();
-            stepM();
+            EStep();
+            MStep();
+
+            // Save likelihoods for future graph plot
             lastLikelihood = likelihood;
             likelihood = calcLikelihood();
+            likelihoods.add(likelihood);
+
+            // Save likelihoods for future graph plot
+            perplexity = calcLikelihood(likelihood);
+            perplexities.add(perplexity);
         }
+
+//        Integer[][] confusionMatrix = bulidConfusionMatrix();
+    }
+
+    private Integer[][] bulidConfusionMatrix() {
+        Integer[][] confusionMatrix = new Integer[this.numClusters][this.numClusters + 1];
+
+        for (Integer[] row : confusionMatrix) {
+            Arrays.fill(row, 0);
+        }
+
+        int maxCluster;
+        for (Article currentArticle : developmentSet.getArticles()) {
+            Double maxWt = Wti.get(currentArticle)[0];
+            maxCluster = 0;
+            for (int i = 1; i < this.numClusters; i++) {
+                Double wti = Wti.get(currentArticle)[i];
+                if (wti > maxWt) {
+                    maxWt = wti;
+                    maxCluster = i;
+                }
+            }
+            currentArticle.setAssignedTopic(topics.getTopics()[maxCluster]);
+
+            // Build the confusion matrix based on the given topics and the max cluster topic
+            for (String topic : currentArticle.getTopics()) {
+                confusionMatrix[maxCluster][topics.getTopicIndex(topic)] += 1;
+                confusionMatrix[maxCluster][this.numClusters] += 1;
+            }
+        }
+
+
+        return confusionMatrix;
+    }
+
+    private double calcLikelihood(double likelihood) {
+        return Math.pow(2, -1.0 / developmentSet.countNumberOfWords() * likelihood);
     }
 
     private void initClusters() {
@@ -73,7 +124,7 @@ public class ExpectationMaximization {
         }
     }
 
-    private void stepE() {
+    private void EStep() {
         for (Article currentArticle : developmentSet.getArticles()) {
             calcWti(currentArticle);
         }
@@ -129,7 +180,7 @@ public class ExpectationMaximization {
         return Arrays.stream(Zi).max().getAsDouble();
     }
 
-    private void stepM() {
+    private void MStep() {
         calcPik();
         calcAlpha();
         smoothAlpha();
@@ -145,7 +196,6 @@ public class ExpectationMaximization {
         for (int i = 0; i < numClusters; i++) {
             sumWti = 0;
             for (Article currentArticle : developmentSet.getArticles()) {
-                // Todo: Why not working directly on the numerically stable numerator Zi? we can calculate the first Zi in the initEM.
                 sumWti += this.Wti.get(currentArticle)[i] * currentArticle.getNumberOfWords();
             }
             wordsInClusters[i] = sumWti;

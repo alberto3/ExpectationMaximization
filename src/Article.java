@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 public class Article implements Comparable<Article> {
+    private String assignedTopic;
     private List<String> topics;
     private Map<String, Integer> wordsOccurrences = new HashMap<String, Integer>();
     private int id;
@@ -29,6 +30,14 @@ public class Article implements Comparable<Article> {
             topics = new ArrayList<>();
         }
         topics.add(topic);
+    }
+
+    public String getAssignedTopic() {
+        return assignedTopic;
+    }
+
+    public void setAssignedTopic(String topic) {
+        this.assignedTopic = topic;
     }
 
     public Map<String, Integer> getWordsOccurrences() {
