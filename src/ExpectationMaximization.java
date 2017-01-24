@@ -42,7 +42,6 @@ public class ExpectationMaximization {
         // we find that the Likelihood decrease - it means that we have a bug in our implementation or
         // that we are smoothing too aggressively.
 
-        Integer[][] confusionMatrix = bulidConfusionMatrix();
         
         // Run EM algorithm until convergence
         while (likelihood - lastLikelihood > EM_THRESHOLD) {
@@ -55,14 +54,25 @@ public class ExpectationMaximization {
             likelihoods.add(likelihood);
             
             // Save likelihoods for future graph plot
-            perplexity = calcLikelihood(likelihood);
+            perplexity = calcPerplexity(likelihood);
             perplexities.add(perplexity);
         }
         
-//        Integer[][] confusionMatrix = bulidConfusionMatrix();
+        Integer[][] confusionMatrix = bulidConfusionMatrix();
+        double accuracy = calcAccuracy(confusionMatrix);
+        System.out.println("Accuracy rate is: " + accuracy);
     }
 
-    private Integer[][] bulidConfusionMatrix() {
+    private double calcAccuracy(Integer[][] confusionMatrix) {
+    	int correctAssignments = 0;
+    	for (int i=0; i<this.numClusters; i++) {
+    		correctAssignments += confusionMatrix[i][i];
+    	}
+    	
+		return correctAssignments / developmentSet.getArticles().size();
+	}
+
+	private Integer[][] bulidConfusionMatrix() {
     	Integer[][] confusionMatrix = new Integer[this.numClusters][this.numClusters+1];
     	
         for (Integer[] row: confusionMatrix)
@@ -94,7 +104,7 @@ public class ExpectationMaximization {
 		return confusionMatrix;
 	}
 
-	private double calcLikelihood(double likelihood) {
+	private double calcPerplexity(double likelihood) {
     	return Math.pow(2, -1.0/developmentSet.countNumberOfWords() * likelihood);
 	}
 
