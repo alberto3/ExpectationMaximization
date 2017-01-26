@@ -33,16 +33,16 @@ public class ExpectationMaximization {
     }
 
     public void run() {
+        double perplexity;
         double likelihood = 0;
         List<Double> likelihoods = new ArrayList<Double>();
-        double perplexity = 0;
         List<Double> perplexities = new ArrayList<Double>();
         double lastLikelihood = likelihood - EM_THRESHOLD - 1;
+        Integer[][] confusionMatrix = buildConfusionMatrix();
+
         // if in some round
         // we find that the Likelihood decrease - it means that we have a bug in our implementation or
         // that we are smoothing too aggressively.
-
-        Integer[][] confusionMatrix = bulidConfusionMatrix();
 
         // Run EM algorithm until convergence
         while (likelihood - lastLikelihood > EM_THRESHOLD) {
@@ -58,11 +58,9 @@ public class ExpectationMaximization {
             perplexity = calcLikelihood(likelihood);
             perplexities.add(perplexity);
         }
-
-//        Integer[][] confusionMatrix = bulidConfusionMatrix();
     }
 
-    private Integer[][] bulidConfusionMatrix() {
+    private Integer[][] buildConfusionMatrix() {
         Integer[][] confusionMatrix = new Integer[this.numClusters][this.numClusters + 1];
 
         for (Integer[] row : confusionMatrix) {
