@@ -53,7 +53,7 @@ public class ExpectationMaximization {
             likelihood = calcLikelihood();
             likelihoods.add(likelihood);
             
-            // Save likelihoods for future graph plot
+            // Save perplexities for future graph plot
             perplexity = calcPerplexity(likelihood);
             perplexities.add(perplexity);
         }
@@ -124,6 +124,8 @@ public class ExpectationMaximization {
 
     // Set the initial Wti
     private void initEM() {
+    	
+    	// Going over all articles in each cluster (==all articles) and building the initial clusters probability
         for (int i = 0; i < numClusters; i++) {
             for (Article currentArticle : clusters.get(i)) {
                 Double[] clusterProbabilityForArticle = new Double[numClusters];
@@ -211,10 +213,12 @@ public class ExpectationMaximization {
             }
             wordsInClusters[i] = sumWti;
         }
-
+        int ii = 0;
         // Calculate Pik (divisor)
         // Calculate the Lidstone probability for each word to be in each topic by its Occurrences in all articles
         for (String word : developmentSet.getWordsOccurrences().keySet()) {
+        	System.out.println(ii);
+        	ii++;
             for (int i = 0; i < numClusters; i++) {
                 wordsOccurrencesInArticles = 0;
                 for (Article currentArticle : developmentSet.getArticles()) {
@@ -226,6 +230,8 @@ public class ExpectationMaximization {
             }
             this.Pik.put(word, lidstoneP);
         }
+        
+        System.out.println("end pik");
     }
 
     private double calcLidstonePortability(double wordsOccurrencesInArticles, double wordsInCluster) {
