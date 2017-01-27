@@ -42,73 +42,71 @@ public class ExpectationMaximization {
         // we find that the Likelihood decrease - it means that we have a bug in our implementation or
         // that we are smoothing too aggressively.
 
-        
+
         // Run EM algorithm until convergence
         while (likelihood - lastLikelihood > EM_THRESHOLD) {
             EStep();
             MStep();
-            
+
             // Save likelihoods for future graph plot
             lastLikelihood = likelihood;
             likelihood = calcLikelihood();
             likelihoods.add(likelihood);
-            
+
             // Save perplexities for future graph plot
             perplexity = calcPerplexity(likelihood);
             perplexities.add(perplexity);
         }
-        
+
         Integer[][] confusionMatrix = bulidConfusionMatrix();
         double accuracy = calcAccuracy(confusionMatrix);
         System.out.println("Accuracy rate is: " + accuracy);
     }
 
     private double calcAccuracy(Integer[][] confusionMatrix) {
-    	int correctAssignments = 0;
-    	for (int i=0; i<this.numClusters; i++) {
-    		correctAssignments += confusionMatrix[i][i];
-    	}
-    	
-		return correctAssignments / developmentSet.getArticles().size();
-	}
-
-	private Integer[][] bulidConfusionMatrix() {
-    	Integer[][] confusionMatrix = new Integer[this.numClusters][this.numClusters+1];
-    	
-        for (Integer[] row: confusionMatrix)
-        {
-        	Arrays.fill(row, 0);
+        int correctAssignments = 0;
+        for (int i = 0; i < this.numClusters; i++) {
+            correctAssignments += confusionMatrix[i][i];
         }
-    	
-		int maxCluster;
-		for (Article currentArticle : developmentSet.getArticles()) {
-			Double maxWt = Wti.get(currentArticle)[0];
-			maxCluster = 0;
-			for (int i=1; i<this.numClusters; i++){
-				Double wti = Wti.get(currentArticle)[i];
-				if (wti > maxWt){
-					maxWt = wti;
-					maxCluster = i;
-				}
-			}
-			currentArticle.setAssignedTopic(topics.getTopics()[maxCluster]);
-			
-			// Build the confusion matrix based on the given topics and the max cluster topic
-			for (String topic : currentArticle.getTopics()) {
-				confusionMatrix[maxCluster][topics.getTopicIndex(topic)] += 1;
-				confusionMatrix[maxCluster][this.numClusters] += 1;
-			}
-		}
 
-    	
-		return confusionMatrix;
-	}
+        return correctAssignments / developmentSet.getArticles().size();
+    }
 
-	private double calcPerplexity(double likelihood) {
-    	return Math.pow(2, -1.0/developmentSet.countNumberOfWords() * likelihood);
-	}
+    private Integer[][] bulidConfusionMatrix() {
+        Integer[][] confusionMatrix = new Integer[this.numClusters][this.numClusters + 1];
 
-	private void initClusters() {
+        for (Integer[] row : confusionMatrix) {
+            Arrays.fill(row, 0);
+        }
+
+        int maxCluster;
+        for (Article currentArticle : developmentSet.getArticles()) {
+            Double maxWt = Wti.get(currentArticle)[0];
+            maxCluster = 0;
+            for (int i = 1; i < this.numClusters; i++) {
+                Double wti = Wti.get(currentArticle)[i];
+                if (wti > maxWt) {
+                    maxWt = wti;
+                    maxCluster = i;
+                }
+            }
+            currentArticle.setAssignedTopic(topics.getTopics()[maxCluster]);
+
+            // Build the confusion matrix based on the given topics and the max cluster topic
+            for (String topic : currentArticle.getTopics()) {
+                confusionMatrix[maxCluster][topics.getTopicIndex(topic)] += 1;
+                confusionMatrix[maxCluster][this.numClusters] += 1;
+            }
+        }
+
+        return confusionMatrix;
+    }
+
+    private double calcPerplexity(double likelihood) {
+        return Math.pow(2, -1.0 / developmentSet.countNumberOfWords() * likelihood);
+    }
+
+    private void initClusters() {
         final int[] index = {0};
         clusters = new HashMap<>();
 
@@ -124,8 +122,8 @@ public class ExpectationMaximization {
 
     // Set the initial Wti
     private void initEM() {
-    	
-    	// Going over all articles in each cluster (==all articles) and building the initial clusters probability
+
+        // Going over all articles in each cluster (==all articles) and building the initial clusters probability
         for (int i = 0; i < numClusters; i++) {
             for (Article currentArticle : clusters.get(i)) {
                 Double[] clusterProbabilityForArticle = new Double[numClusters];
@@ -227,8 +225,6 @@ public class ExpectationMaximization {
             }
             this.Pik.put(word, lidstoneP);
         }
-        
-        System.out.println("end pik");
     }
 
     private double calcLidstonePortability(double wordsOccurrencesInArticles, double wordsInCluster) {
