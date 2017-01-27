@@ -202,7 +202,6 @@ public class ExpectationMaximization {
     private void calcPik() {
         double sumWti;
         double wordsOccurrencesInArticles;
-        Double[] lidstoneP = new Double[numClusters];
         double[] wordsInClusters = new double[numClusters];
 
         // Calculate Pik (dividend)
@@ -213,12 +212,10 @@ public class ExpectationMaximization {
             }
             wordsInClusters[i] = sumWti;
         }
-        int ii = 0;
         // Calculate Pik (divisor)
         // Calculate the Lidstone probability for each word to be in each topic by its Occurrences in all articles
         for (String word : developmentSet.getWordsOccurrences().keySet()) {
-        	System.out.println(ii);
-        	ii++;
+            Double[] lidstoneP = new Double[numClusters];
             for (int i = 0; i < numClusters; i++) {
                 wordsOccurrencesInArticles = 0;
                 for (Article currentArticle : developmentSet.getArticles()) {
