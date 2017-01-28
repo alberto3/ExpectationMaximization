@@ -1,3 +1,4 @@
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -44,7 +45,7 @@ public class ExpectationMaximization {
 
 
         // Run EM algorithm until convergence
-        while (likelihood - lastLikelihood > EM_THRESHOLD) {
+        while (Math.abs(likelihood - lastLikelihood) > EM_THRESHOLD) {
             EStep();
             MStep();
 
@@ -56,9 +57,11 @@ public class ExpectationMaximization {
             // Save perplexities for future graph plot
             perplexity = calcPerplexity(likelihood);
             perplexities.add(perplexity);
+
+            System.out.println(new MessageFormat("Likelihood: {0} \t Perplexity: {1}").format(new Object[]{likelihood, perplexity}));
         }
 
-        Integer[][] confusionMatrix = bulidConfusionMatrix();
+        Integer[][] confusionMatrix = buildConfusionMatrix();
         double accuracy = calcAccuracy(confusionMatrix);
         System.out.println("Accuracy rate is: " + accuracy);
     }
@@ -72,7 +75,7 @@ public class ExpectationMaximization {
         return correctAssignments / developmentSet.getArticles().size();
     }
 
-    private Integer[][] bulidConfusionMatrix() {
+    private Integer[][] buildConfusionMatrix() {
         Integer[][] confusionMatrix = new Integer[this.numClusters][this.numClusters + 1];
 
         for (Integer[] row : confusionMatrix) {
@@ -103,7 +106,7 @@ public class ExpectationMaximization {
     }
 
     private double calcPerplexity(double likelihood) {
-        return Math.pow(2, -1.0 / developmentSet.countNumberOfWords() * likelihood);
+        return Math.pow(2, -1.0 / (developmentSet.countNumberOfWords() * likelihood));
     }
 
     private void initClusters() {
@@ -264,21 +267,23 @@ public class ExpectationMaximization {
 
     private double calcLikelihood() {
         double likelihood = 0;
-        double sumZt;
-        double m;
 
         for (Article currentArticle : Mt.keySet()) {
-            sumZt = 0;
-            m = Mt.get(currentArticle);
-            if (Zti.get(currentArticle) != null) {
-                for (double Zti : Zti.get(currentArticle)) {
-                    if (-1 * K <= Zti - m) {
-                        sumZt += Math.exp(Zti - m);
+            double sumZt = 0;
+            double Mt = this.Mt.get(currentArticle);
+            Double[] clusters = Zti.get(currentArticle);
+
+            if (clusters != null) {
+                for (double Zti : clusters) {
+                    if (-1 * K <= Zti - Mt) {
+                        sumZt += Math.exp(Zti - Mt);
                     }
                 }
             }
-            likelihood += m + Math.log(sumZt);
+
+            likelihood += Mt + Math.log(sumZt);
         }
+
         return likelihood;
     }
 }
