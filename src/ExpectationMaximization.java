@@ -17,8 +17,9 @@ public class ExpectationMaximization {
     private Map<Article, Double> Mt;
     private Map<String, Double[]> Pik;
     private double clustersProbability[]; //alpha(i)
+    private double lambda;
 
-    public void init(DevelopmentSet developmentSet, int numClusters, Topics topics) {
+    public void init(DevelopmentSet developmentSet, int numClusters, Topics topics, double lambda) {
         this.Wti = new HashMap<>();
         this.Zti = new HashMap<>();
         this.Mt = new HashMap<>();
@@ -27,6 +28,7 @@ public class ExpectationMaximization {
         this.topics = topics;
         this.numClusters = numClusters;
         this.clustersProbability = new double[numClusters];
+        this.lambda = lambda;
 
         initClusters();
         initEM();
@@ -205,23 +207,25 @@ public class ExpectationMaximization {
         double wordsOccurrencesInArticles;
         double[] wordsInClusters = new double[numClusters];
 
-        // Calculate Pik (dividend)
+        // Calculate Pik (divisor)
         for (int i = 0; i < numClusters; i++) {
             sumWti = 0;
             for (Article currentArticle : developmentSet.getArticles()) {
-                sumWti += this.Wti.get(currentArticle)[i] * currentArticle.getNumberOfWords();
+                sumWti += (this.Wti.get(currentArticle)[i] * currentArticle.getNumberOfWords());
             }
             wordsInClusters[i] = sumWti;
         }
-        // Calculate Pik (divisor)
+        // Calculate Pik (dividend)
         // Calculate the Lidstone probability for each word to be in each topic by its Occurrences in all articles
         for (String word : developmentSet.getWordsOccurrences().keySet()) {
             Double[] lidstoneP = new Double[numClusters];
             for (int i = 0; i < numClusters; i++) {
                 wordsOccurrencesInArticles = 0;
                 for (Article currentArticle : developmentSet.getArticles()) {
-                    if (currentArticle.getWordOccurrences(word) > 0 && this.Wti.get(currentArticle)[i] > 0) {
-                        wordsOccurrencesInArticles += this.Wti.get(currentArticle)[i] * currentArticle.getWordOccurrences(word);
+                    int wordOccurrences = currentArticle.getWordOccurrences(word);
+                    Double Wti = this.Wti.get(currentArticle)[i];
+                    if (wordOccurrences > 0 && Wti > 0) {
+                        wordsOccurrencesInArticles += (Wti * wordOccurrences);
                     }
                 }
                 lidstoneP[i] = calcLidstonePortability(wordsOccurrencesInArticles, wordsInClusters[i]);
@@ -231,7 +235,7 @@ public class ExpectationMaximization {
     }
 
     private double calcLidstonePortability(double wordsOccurrencesInArticles, double wordsInCluster) {
-        return (wordsOccurrencesInArticles + TESTED_LAMBDA) / (wordsInCluster + TESTED_LAMBDA * this.developmentSet.getWordsOccurrences().size());
+        return (wordsOccurrencesInArticles + lambda) / (wordsInCluster + lambda * this.developmentSet.getWordsOccurrences().size());
     }
 
     // Calculate alpha(i)
