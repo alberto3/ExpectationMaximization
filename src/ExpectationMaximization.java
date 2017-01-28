@@ -36,11 +36,13 @@ public class ExpectationMaximization {
     }
 
     public void run() {
-        double likelihood = 0;
+        double lastLikelihood = Double.NEGATIVE_INFINITY;
+        double likelihood = calcLikelihood();
+
         List<Double> likelihoods = new ArrayList<Double>();
         double perplexity = 0;
         List<Double> perplexities = new ArrayList<Double>();
-        double lastLikelihood = likelihood - EM_THRESHOLD - 1;
+
         // if in some round
         // we find that the Likelihood decrease - it means that we have a bug in our implementation or
         // that we are smoothing too aggressively.
@@ -52,7 +54,11 @@ public class ExpectationMaximization {
             MStep();
 
             // Save likelihoods for future graph plot
-            lastLikelihood = likelihood;
+            if (lastLikelihood == Double.NEGATIVE_INFINITY) {
+                lastLikelihood = calcLikelihood() - 2 * EM_THRESHOLD;
+            } else {
+                lastLikelihood = likelihood;
+            }
             likelihood = calcLikelihood();
             likelihoods.add(likelihood);
 
