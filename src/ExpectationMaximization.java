@@ -117,7 +117,7 @@ public class ExpectationMaximization {
         			maxAssignedArticles = confusionMatrix[i][j];
         		}
         	}
-        	correctAssignmentsRate += maxAssignedArticles / confusionMatrix[i][numClusters];
+        	correctAssignmentsRate += (double) maxAssignedArticles / confusionMatrix[i][numClusters];
         }
         
         correctAssignmentsRate /= numClusters;
