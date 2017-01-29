@@ -158,7 +158,7 @@ public class ExpectationMaximization {
         Double sumZi = 0.0;
         Double[] Zi = calcZi(currentArticle);
         Double[] clusterProbabilityForArticle = new Double[numClusters];
-        Double m = calcMaxZi(Stream.of(Zi).mapToDouble(Double::doubleValue).toArray());
+        Double m = calcMaxZi(Zi);
 
         for (int i = 0; i < numClusters; i++) {
             if (Zi[i] - m < -1 * K) {
@@ -198,8 +198,8 @@ public class ExpectationMaximization {
         return result;
     }
 
-    private Double calcMaxZi(double[] Zi) {
-        return Arrays.stream(Zi).max().getAsDouble();
+    private Double calcMaxZi(Double[] Zi) {
+        return Collections.max(Arrays.asList(Zi));
     }
 
     private void MStep() {
