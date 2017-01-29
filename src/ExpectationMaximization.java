@@ -6,7 +6,7 @@ public class ExpectationMaximization {
     private final static double TESTED_LAMBDA = 0.01; // check
     private final static double EPSILON_THRESHOLD = 0.00000001;
     private final static double K = 10;
-    private final static double EM_THRESHOLD = 1; // check
+    private final static double EM_THRESHOLD = 10; // check
 
     private Map<Integer, List<Article>> clusters;
     private DevelopmentSet developmentSet;
@@ -47,7 +47,6 @@ public class ExpectationMaximization {
         // we find that the Likelihood decrease - it means that we have a bug in our implementation or
         // that we are smoothing too aggressively.
 
-
         // Run EM algorithm until convergence
         while (likelihood - lastLikelihood > EM_THRESHOLD) {
             EStep();
@@ -68,29 +67,25 @@ public class ExpectationMaximization {
             perplexities.add(perplexity);
             
             System.out.println("likelihood: " + likelihood + "\t" + " perplexity: " + perplexity);
-        }
 
-        Integer[][] confusionMatrix = bulidConfusionMatrix();
-        double accuracy = calcAccuracy(confusionMatrix);
-        System.out.println("Accuracy rate is: " + accuracy);
+        }            
+            
+        int[][] confusionMatrix = bulidConfusionMatrix();
+        
+
+
+     
+
     }
 
-    private double calcAccuracy(Integer[][] confusionMatrix) {
-        int correctAssignments = 0;
-        for (int i = 0; i < this.numClusters; i++) {
-            correctAssignments += confusionMatrix[i][i];
-        }
+    private int[][] bulidConfusionMatrix() {
+        int[][] confusionMatrix = new int[this.numClusters][this.numClusters + 1];
 
-        return correctAssignments / developmentSet.getArticles().size();
-    }
-
-    private Integer[][] bulidConfusionMatrix() {
-        Integer[][] confusionMatrix = new Integer[this.numClusters][this.numClusters + 1];
-
-        for (Integer[] row : confusionMatrix) {
+        for (int[] row : confusionMatrix) {
             Arrays.fill(row, 0);
         }
-
+        
+        double correctAssignmentsRate = 0;
         int maxCluster;
         for (Article currentArticle : developmentSet.getArticles()) {
             Double maxWt = Wti.get(currentArticle)[0];
@@ -107,15 +102,33 @@ public class ExpectationMaximization {
             // Build the confusion matrix based on the given topics and the max cluster topic
             for (String topic : currentArticle.getTopics()) {
                 confusionMatrix[maxCluster][topics.getTopicIndex(topic)] += 1;
-                confusionMatrix[maxCluster][this.numClusters] += 1;
+//                if (maxCluster == topics.getTopicIndex(topic)) {
+//                	correctAssignments += 1;
+//                }
+                
             }
+            confusionMatrix[maxCluster][this.numClusters] += 1;
         }
+        
+        for (int i = 0; i < this.numClusters; i++) {
+        	int maxAssignedArticles = confusionMatrix[i][0];
+        	for (int j = 1; j < this.numClusters; j++) {
+        		if (confusionMatrix[i][j] > maxAssignedArticles) {
+        			maxAssignedArticles = confusionMatrix[i][j];
+        		}
+        	}
+        	correctAssignmentsRate += maxAssignedArticles / confusionMatrix[i][numClusters];
+        }
+        
+        correctAssignmentsRate /= numClusters;
+        
+        System.out.println("Accuracy rate is: " + correctAssignmentsRate);
 
         return confusionMatrix;
     }
 
     private double calcPerplexity(double likelihood) {
-        return Math.pow(2, -1.0 / (developmentSet.countNumberOfWords() * likelihood));
+        return Math.pow(2, -1.0 / developmentSet.countNumberOfWords() * likelihood);
     }
 
     private void initClusters() {
