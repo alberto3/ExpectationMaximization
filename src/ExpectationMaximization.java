@@ -3,10 +3,10 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class ExpectationMaximization {
-    private final static double TESTED_LAMBDA = 0.01; // check
+    private final static double TESTED_LAMBDA = 1.03;
     private final static double EPSILON_THRESHOLD = 0.00000001;
     private final static double K = 10;
-    private final static double EM_THRESHOLD = 10; // check
+    private final static double EM_THRESHOLD = 10; 
 
     private Map<Integer, List<Article>> clusters;
     private DevelopmentSet developmentSet;
@@ -72,10 +72,6 @@ public class ExpectationMaximization {
             
         int[][] confusionMatrix = bulidConfusionMatrix();
         
-
-
-     
-
     }
 
     private int[][] bulidConfusionMatrix() {
@@ -101,11 +97,7 @@ public class ExpectationMaximization {
 
             // Build the confusion matrix based on the given topics and the max cluster topic
             for (String topic : currentArticle.getTopics()) {
-                confusionMatrix[maxCluster][topics.getTopicIndex(topic)] += 1;
-//                if (maxCluster == topics.getTopicIndex(topic)) {
-//                	correctAssignments += 1;
-//                }
-                
+                confusionMatrix[maxCluster][topics.getTopicIndex(topic)] += 1;              
             }
             confusionMatrix[maxCluster][this.numClusters] += 1;
         }
@@ -117,9 +109,12 @@ public class ExpectationMaximization {
         			maxAssignedArticles = confusionMatrix[i][j];
         		}
         	}
+        	
+        	// Add the percentage of correct assignments for the current cluster
         	correctAssignmentsRate += (double) maxAssignedArticles / confusionMatrix[i][numClusters];
         }
         
+        // Calculate the percentage of correct assignments for all clusters
         correctAssignmentsRate /= numClusters;
         
         System.out.println("Accuracy rate is: " + correctAssignmentsRate);
@@ -131,6 +126,7 @@ public class ExpectationMaximization {
         return Math.pow(2, -1.0 / developmentSet.countNumberOfWords() * likelihood);
     }
 
+    // Set the initial cluster for each article to be the article index modulo number of clusters
     private void initClusters() {
         final int[] index = {0};
         clusters = new HashMap<>();
@@ -255,7 +251,7 @@ public class ExpectationMaximization {
     }
 
     private double calcLidstonePortability(double wordsOccurrencesInArticles, double wordsInCluster) {
-        return (wordsOccurrencesInArticles + lambda) / (wordsInCluster + lambda * this.developmentSet.getWordsOccurrences().size());
+        return (wordsOccurrencesInArticles + TESTED_LAMBDA) / (wordsInCluster + TESTED_LAMBDA * this.developmentSet.getWordsOccurrences().size());
     }
 
     // Calculate alpha(i)
